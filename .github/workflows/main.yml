@@ -1,0 +1,32 @@
+# This is a GitHub action that checks if README.md contains your name before committing
+name: README-checker
+on: [push]
+jobs:
+  check-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyGithub
+      - name: Check README.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USER_NAME: ${{ github.actor }}
+        run: |
+          from github import Github
+          import os
+          g = Github(os.environ["GITHUB_TOKEN"])
+          repo = g.get_repo(f"{os.environ['USER_NAME']}/{os.environ['GITHUB_REPOSITORY']}")
+          readme = repo.get_contents("README.md")
+          readme_content = readme.decoded_content.decode()
+          if os.environ["USER_NAME"] in readme_content:
+            print("README.md contains your name. Committing...")
+          else:
+            print("README.md does not contain your name. Aborting commit...")
+            exit(1)
